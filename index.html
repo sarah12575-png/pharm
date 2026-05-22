@@ -2,63 +2,379 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>전국 약국 정보 조회</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .pharmacy-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
-        .loading { color: blue; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.8s ease-out;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .input-group input {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-btn {
+            padding: 12px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .search-btn:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-results {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .no-results i {
+            font-size: 3em;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .pharmacy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .pharmacy-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #667eea;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        .pharmacy-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .pharmacy-card strong {
+            display: block;
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .pharmacy-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .pharmacy-info i {
+            width: 24px;
+            color: #667eea;
+            margin-right: 10px;
+        }
+        
+        .error {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            border-left: 5px solid #ff6b6b;
+            color: #d32f2f;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .result-count {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            animation: fadeIn 0.5s ease-in;
+        }
     </style>
 </head>
 <body>
-    <h1>💊 전국 약국 찾기</h1>
-    <div>
-        <input type="text" id="city" placeholder="시도 (예: 서울특별시)">
-        <input type="text" id="gu" placeholder="시군구 (예: 강남구)">
-        <button onclick="searchPharmacy()">검색</button>
+    <div class="container">
+        <div class="header">
+            <h1>💊 전국 약국 찾기</h1>
+            <p>필요한 약국을 쉽게 찾아보세요</p>
+        </div>
+        
+        <div class="search-box">
+            <div class="input-group">
+                <input type="text" id="city" placeholder="시도 (예: 서울특별시)" autocomplete="off">
+                <input type="text" id="gu" placeholder="시군구 (예: 강남구)" autocomplete="off">
+                <button class="search-btn" onclick="searchPharmacy()">
+                    <i class="fas fa-search"></i> 검색
+                </button>
+            </div>
+        </div>
+        
+        <div id="results" class="results"></div>
     </div>
-    <div id="results" style="margin-top: 20px;"></div>
 
     <script>
-        async function searchPharmacy() {
-            const city = document.getElementById('city').value;
-            const gu = document.getElementById('gu').value;
-            const resultsDiv = document.getElementById('results');
+        const resultsDiv = document.getElementById('results');
+        
+        function searchPharmacy() {
+            const city = document.getElementById('city').value.trim();
+            const gu = document.getElementById('gu').value.trim();
             
-            resultsDiv.innerHTML = '<p class="loading">정보를 불러오는 중...</p>';
-
+            if (!city || !gu) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <p>시도와 시군구를 모두 입력해주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>약국 정보를 검색 중입니다...</span>
+                </div>
+            `;
+            
+            fetchPharmacies(city, gu);
+        }
+        
+        async function fetchPharmacies(city, gu) {
             try {
-                // 우리 서버리스 함수 호출 (CORS 문제 없음)
-                const response = await fetch(`/api/list?Q0=${city}&Q1=${gu}`);
-                const xmlText = await response.text();
+                const response = await fetch(`/api/list?Q0=${encodeURIComponent(city)}&Q1=${encodeURIComponent(gu)}`);
                 
-                // XML 파싱
+                if (!response.ok) {
+                    throw new Error('검색에 실패했습니다.');
+                }
+                
+                const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                
+                if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error('응답 형식이 올바르지 않습니다.');
+                }
+                
                 const items = xmlDoc.getElementsByTagName("item");
-
-                resultsDiv.innerHTML = '';
-                if (items.length === 0) {
-                    resultsDiv.innerHTML = '<p>검색 결과가 없습니다.</p>';
-                    return;
-                }
-
-                for (let item of items) {
-                    const name = item.getElementsByTagName("dutyName")[0]?.textContent;
-                    const tel = item.getElementsByTagName("dutyTel1")[0]?.textContent;
-                    const addr = item.getElementsByTagName("dutyAddr")[0]?.textContent;
-
-                    resultsDiv.innerHTML += `
-                        <div class="pharmacy-card">
-                            <strong>${name}</strong><br>
-                            📞 ${tel}<br>
-                            📍 ${addr}
-                        </div>
-                    `;
-                }
+                displayResults(items);
+                
             } catch (error) {
-                resultsDiv.innerHTML = '<p style="color:red;">오류가 발생했습니다.</p>';
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-times-circle"></i>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.8;">다시 시도해주세요.</p>
+                    </div>
+                `;
             }
         }
+        
+        function displayResults(items) {
+            resultsDiv.innerHTML = '';
+            
+            if (items.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h3>검색 결과가 없습니다</h3>
+                        <p>다른 검색어로 시도해보세요.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const resultCount = `<div class="result-count">총 <strong>${items.length}</strong>개의 약국을 찾았습니다</div>`;
+            resultsDiv.innerHTML = resultCount;
+            
+            const grid = document.createElement('div');
+            grid.className = 'pharmacy-grid';
+            
+            for (let item of items) {
+                const name = item.getElementsByTagName("dutyName")[0]?.textContent || '정보 없음';
+                const tel = item.getElementsByTagName("dutyTel1")[0]?.textContent || '정보 없음';
+                const addr = item.getElementsByTagName("dutyAddr")[0]?.textContent || '정보 없음';
+                
+                const card = document.createElement('div');
+                card.className = 'pharmacy-card';
+                card.innerHTML = `
+                    <strong>${name}</strong>
+                    <div class="pharmacy-info">
+                        <i class="fas fa-phone"></i>
+                        <span>${tel}</span>
+                    </div>
+                    <div class="pharmacy-info">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>${addr}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+            
+            resultsDiv.appendChild(grid);
+        }
+        
+        // 엔터키로도 검색 가능
+        document.getElementById('city').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchPharmacy();
+        });
+        document.getElementById('gu').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchPharmacy();
+        });
     </script>
 </body>
 </html>
